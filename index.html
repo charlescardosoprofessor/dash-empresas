@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Investimento - Nova Porteirinha (Dados Reais)</title>
+    
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body { background-color: #f8fafc; font-family: 'Segoe UI', sans-serif; }
+        .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+    </style>
+</head>
+<body>
+
+    <div id="app" class="min-h-screen p-6 md:p-10 max-w-7xl mx-auto">
+        
+        <header class="mb-8 flex flex-col md:flex-row justify-between items-center bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <div>
+                <h1 class="text-3xl font-bold text-slate-800">Painel de Interesse Empresarial</h1>
+                <p class="text-slate-500 mt-1">Dados extraídos: <strong>Cadastro de Interesse Empresarial - Nova Porteirinha</strong></p>
+            </div>
+            <div class="mt-4 md:mt-0 text-right">
+                <div class="text-sm text-slate-400 uppercase tracking-wide font-semibold">População Base (2022)</div>
+                <div class="text-2xl font-bold text-slate-700">{{ formatNumber(population) }} habitantes</div>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            
+            <div class="bg-white p-6 rounded-xl shadow-sm border-b-4 border-emerald-500 card-hover transition-all">
+                <div class="text-slate-500 text-xs font-bold uppercase">Investimento Total</div>
+                <div class="text-2xl font-extrabold text-slate-800 mt-2">{{ formatCurrency(totalInvestment) }}</div>
+                <div class="text-xs text-emerald-600 mt-1 flex items-center">
+                    <span class="mr-1">▲</span> Soma de {{ companies.length }} empresas
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border-b-4 border-teal-400 card-hover transition-all">
+                <div class="text-slate-500 text-xs font-bold uppercase">Investimento Per Capita</div>
+                <div class="text-2xl font-extrabold text-slate-800 mt-2">{{ formatCurrency(investmentPerCapita) }}</div>
+                <div class="text-xs text-slate-400 mt-1">Reais por habitante</div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border-b-4 border-blue-500 card-hover transition-all">
+                <div class="text-slate-500 text-xs font-bold uppercase">Total de Empregos Previstos</div>
+                <div class="text-2xl font-extrabold text-slate-800 mt-2">{{ formatNumber(totalJobs) }}</div>
+                <div class="text-xs text-blue-600 mt-1">
+                    Dir: {{ formatNumber(totalDirectJobs) }} | Ind: {{ formatNumber(totalIndirectJobs) }}
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border-b-4 border-indigo-400 card-hover transition-all">
+                <div class="text-slate-500 text-xs font-bold uppercase">Empregos Per Capita</div>
+                <div class="text-2xl font-extrabold text-slate-800 mt-2">{{ formatDecimal(jobsPerCapita) }}</div>
+                <div class="text-xs text-slate-400 mt-1">Vagas por habitante</div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-xl shadow-sm lg:col-span-2">
+                <h3 class="text-lg font-bold text-slate-700 mb-4">Top 5 Maiores Investimentos</h3>
+                <div class="relative h-64 w-full">
+                    <canvas id="investmentChart"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm">
+                <h3 class="text-lg font-bold text-slate-700 mb-4">Distribuição de Vagas (Top 5)</h3>
+                <div class="relative h-64 w-full flex justify-center">
+                    <canvas id="jobsChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
+            <div class="bg-slate-50 px-6 py-4 border-b border-gray-200">
+                <h3 class="font-bold text-slate-700">Detalhamento das Empresas (Dados do Arquivo)</h3>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left text-gray-500">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3">Empresa</th>
+                            <th scope="col" class="px-6 py-3">Atividade Principal</th>
+                            <th scope="col" class="px-6 py-3 text-right">Investimento (R$)</th>
+                            <th scope="col" class="px-6 py-3 text-center">Vagas (D+I)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="(company, index) in sortedCompanies" :key="index" class="bg-white border-b hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+                                {{ company.name }}
+                            </td>
+                            <td class="px-6 py-4 max-w-xs truncate" :title="company.description">
+                                {{ company.description }}
+                            </td>
+                            <td class="px-6 py-4 text-right font-semibold text-emerald-600">
+                                {{ company.investment > 0 ? formatCurrency(company.investment) : 'Não informado' }}
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <span class="bg-blue-100 text-blue-800 text-xs font-bold px-2.5 py-0.5 rounded border border-blue-400">
+                                    {{ company.total_jobs }}
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <footer class="mt-8 text-center text-slate-400 text-xs">
+            <p>Dashboard gerado com base no arquivo: <em>Cadastro de Interesse Empresarial - Nova Porteirinha (respostas).xlsx</em></p>
+        </footer>
+
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    population: 6706,
+                    // Dados extraídos diretamente do CSV via Python
+                    companies: [
+                      {
+                        "name": "Nova Porteirinha Empreendimentos ",
+                        "description": "Empreendimentos Imobiliários - Loteamento",
+                        "investment": 8000000.0,
+                        "direct_jobs": 30,
+                        "indirect_jobs": 100,
+                        "total_jobs": 130
+                      },
+                      {
+                        "name": "Vinhedos Vale Verde",
+                        "description": "Somos uma empresa produtora de uvas de mesa.",
+                        "investment": 6000000.0,
+                        "direct_jobs": 60,
+                        "indirect_jobs": 100,
+                        "total_jobs": 160
+                      },
+                      {
+                        "name": "Rede de Postos de Combustíveis Confiança ",
+                        "description": "Posto de combustíveis e serviços ",
+                        "investment": 5000000.0,
+                        "direct_jobs": 30,
+                        "indirect_jobs": 20,
+                        "total_jobs": 50
+                      },
+                      {
+                        "name": "Rizzoma",
+                        "description": "Produção de mudas com com genética certificada, além de fornecimento de cesta de serviços rurais para produtores.",
+                        "investment": 3000000.0,
+                        "direct_jobs": 50,
+                        "indirect_jobs": 300,
+                        "total_jobs": 350
+                      },
+                      {
+                        "name": "Serra Geral logistica Ltda",
+                        "description": "Transporte rodoviário de cargas...",
+                        "investment": 2000000.0,
+                        "direct_jobs": 60,
+                        "indirect_jobs": 140,
+                        "total_jobs": 200
+                      },
+                      {
+                        "name": "Consórcio União da Serra Geral ",
+                        "description": "Consórcio intermunicipal...",
+                        "investment": 1500000.0,
+                        "direct_jobs": 30,
+                        "indirect_jobs": 50,
+                        "total_jobs": 80
+                      },
+                      {
+                        "name": "BANARICA LTDA",
+                        "description": "Produção e comercialização agropecuária...",
+                        "investment": 1200000.0,
+                        "direct_jobs": 700,
+                        "indirect_jobs": 250,
+                        "total_jobs": 950
+                      },
+                      {
+                        "name": "Serra Geral Logistica Ltda (Filial/Dup)",
+                        "description": "Transporte rodoviário de cargas...",
+                        "investment": 1000000.0,
+                        "direct_jobs": 70,
+                        "indirect_jobs": 140,
+                        "total_jobs": 210
+                      },
+                      {
+                        "name": "CASA DO PRODUTOR RURAL",
+                        "description": "ADUBOS, DEFENSIVOS, SEMENTES, IRRIGACAO ",
+                        "investment": 700000.0,
+                        "direct_jobs": 5,
+                        "indirect_jobs": 10,
+                        "total_jobs": 15
+                      },
+                      {
+                        "name": "Obregox LTDA ",
+                        "description": "Trabalhamos com construção de casas...",
+                        "investment": 200000.0,
+                        "direct_jobs": 20,
+                        "indirect_jobs": 100,
+                        "total_jobs": 120
+                      },
+                      {
+                        "name": "NOVATUR",
+                        "description": "EMPRESA DE TRANSPORTE, TURISMO E LOGISTICA ",
+                        "investment": 100000.0,
+                        "direct_jobs": 15,
+                        "indirect_jobs": 30,
+                        "total_jobs": 45
+                      },
+                      {
+                        "name": "Leonardo cordeiro Souza de almeida",
+                        "description": "Empresa semdrageadoa geleias doces...",
+                        "investment": 58000.0,
+                        "direct_jobs": 12,
+                        "indirect_jobs": 5,
+                        "total_jobs": 17
+                      },
+                      {
+                        "name": "Associação Assitencial de apoio à saúde (Pró Saúde)",
+                        "description": "Hospital Dia ",
+                        "investment": 0.0,
+                        "direct_jobs": 100,
+                        "indirect_jobs": 500,
+                        "total_jobs": 600
+                      },
+                      {
+                        "name": "Leonardo Rodrigues Reis (Gorutuba irrigação)",
+                        "description": "Vendas, montagens, assistência técnica...",
+                        "investment": 0.0,
+                        "direct_jobs": 6,
+                        "indirect_jobs": 15,
+                        "total_jobs": 21
+                      },
+                      {
+                        "name": "Rancho Solidão ",
+                        "description": "Criação e comercialização de peixes...",
+                        "investment": 0.0,
+                        "direct_jobs": 25,
+                        "indirect_jobs": 30,
+                        "total_jobs": 55
+                      }
+                    ]
+                }
+            },
+            computed: {
+                totalInvestment() {
+                    return this.companies.reduce((sum, item) => sum + item.investment, 0);
+                },
+                totalDirectJobs() {
+                    return this.companies.reduce((sum, item) => sum + item.direct_jobs, 0);
+                },
+                totalIndirectJobs() {
+                    return this.companies.reduce((sum, item) => sum + item.indirect_jobs, 0);
+                },
+                totalJobs() {
+                    return this.totalDirectJobs + this.totalIndirectJobs;
+                },
+                investmentPerCapita() {
+                    return this.totalInvestment / this.population;
+                },
+                jobsPerCapita() {
+                    return this.totalJobs / this.population;
+                },
+                sortedCompanies() {
+                    // Ordena: primeiro quem tem investimento (decrescente), depois quem não tem (pelo nome)
+                    return [...this.companies].sort((a, b) => {
+                        if (b.investment !== a.investment) return b.investment - a.investment;
+                        return b.total_jobs - a.total_jobs;
+                    });
+                }
+            },
+            methods: {
+                formatCurrency(value) {
+                    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+                },
+                formatNumber(value) {
+                    return new Intl.NumberFormat('pt-BR').format(value);
+                },
+                formatDecimal(value) {
+                    return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
+                },
+                renderCharts() {
+                    // Filtra apenas empresas com investimento > 0 para o gráfico de barras
+                    const dataWithInvest = this.companies.filter(c => c.investment > 0);
+                    const top5Invest = [...dataWithInvest].sort((a, b) => b.investment - a.investment).slice(0, 5);
+                    
+                    // Top 5 geradores de emprego
+                    const top5Jobs = [...this.companies].sort((a, b) => b.total_jobs - a.total_jobs).slice(0, 5);
+
+                    // Gráfico de Investimento
+                    new Chart(document.getElementById('investmentChart'), {
+                        type: 'bar',
+                        data: {
+                            labels: top5Invest.map(c => {
+                                const name = c.name.trim();
+                                return name.length > 20 ? name.substring(0, 20) + '...' : name;
+                            }),
+                            datasets: [{
+                                label: 'Investimento (R$)',
+                                data: top5Invest.map(c => c.investment),
+                                backgroundColor: '#10b981',
+                                borderRadius: 5,
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false } },
+                            scales: { 
+                                y: { 
+                                    beginAtZero: true,
+                                    grid: { display: true, color: '#f1f5f9' }
+                                },
+                                x: {
+                                    grid: { display: false }
+                                }
+                            }
+                        }
+                    });
+
+                    // Gráfico de Empregos
+                    new Chart(document.getElementById('jobsChart'), {
+                        type: 'doughnut',
+                        data: {
+                            labels: top5Jobs.map(c => c.name.substring(0, 15) + '...'),
+                            datasets: [{
+                                data: top5Jobs.map(c => c.total_jobs),
+                                backgroundColor: [
+                                    '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'
+                                ],
+                                borderWidth: 0
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { 
+                                legend: { position: 'bottom', labels: { boxWidth: 10, usePointStyle: true } } 
+                            }
+                        }
+                    });
+                }
+            },
+            mounted() {
+                this.renderCharts();
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
