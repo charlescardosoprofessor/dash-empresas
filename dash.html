@@ -17,7 +17,7 @@
         .text-terra { color: #804533; }
         .text-gold { color: #dba14d; }
         .text-olive { color: #535438; }
-        .bg-beige-light { background-color: #f4f1ea; } /* Variação mais clara do #dbcbb1 */
+        .bg-beige-light { background-color: #f4f1ea; }
         
         .card { 
             background-color: white;
@@ -190,7 +190,6 @@
             data() {
                 return {
                     population: 6706, 
-                    // Paleta para JS
                     colors: {
                         terra: '#804533',
                         gold: '#dba14d',
@@ -199,6 +198,33 @@
                         olive: '#535438'
                     },
                     companies: [
+                        // NOVAS ADIÇÕES
+                        {
+                            "name": "BMC CACAU LTDA",
+                            "description": "Agronegócio - Produção e expansão da cultura de cacau.",
+                            "investment": 5500000.0,
+                            "direct_jobs": 38,
+                            "indirect_jobs": 5000,
+                            "total_jobs": 5038
+                        },
+                        {
+                            "name": "BIOFARM AGROINDÚSTRIA",
+                            "description": "Agronegócio - Agroindústria focada em produção agrícola.",
+                            "investment": 7000000.0,
+                            "direct_jobs": 250,
+                            "indirect_jobs": 800,
+                            "total_jobs": 1050
+                        },
+                        {
+                            "name": "SARTORI FRUTAS",
+                            "description": "Agronegócio - Produção e comércio de frutas.",
+                            "investment": 3000000.0,
+                            "direct_jobs": 20,
+                            "indirect_jobs": 100,
+                            "total_jobs": 120
+                        },
+
+                        // DADOS ANTERIORES
                         {"name": "Nova Porteirinha Empreendimentos ", "description": "Empreendimentos Imobiliários - Loteamento", "investment": 8000000.0, "direct_jobs": 30, "indirect_jobs": 100, "total_jobs": 130},
                         {"name": "Vinhedos Vale Verde", "description": "Somos uma empresa produtora de uvas de mesa.", "investment": 6000000.0, "direct_jobs": 60, "indirect_jobs": 100, "total_jobs": 160},
                         {"name": "Rede de Postos de Combustíveis Confiança ", "description": "Posto de combustíveis e serviços ", "investment": 5000000.0, "direct_jobs": 30, "indirect_jobs": 20, "total_jobs": 50},
@@ -231,10 +257,10 @@
                 formatNumber(value) { return new Intl.NumberFormat('pt-BR').format(value); },
                 formatDecimal(value) { return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value); },
                 renderCharts() {
+                    // Atualiza gráficos (Top 5 Investment e Top 5 Jobs)
                     const top5Invest = [...this.companies].sort((a, b) => b.investment - a.investment).slice(0, 5);
                     const top5Jobs = [...this.companies].sort((a, b) => b.total_jobs - a.total_jobs).slice(0, 5);
 
-                    // Gráfico de Barras com a Paleta
                     new Chart(document.getElementById('investmentChart'), {
                         type: 'bar',
                         data: {
@@ -242,9 +268,8 @@
                             datasets: [{
                                 label: 'Investimento (R$)',
                                 data: top5Invest.map(c => c.investment),
-                                backgroundColor: this.colors.terra, // Terracota
-                                borderRadius: 4,
-                                hoverBackgroundColor: this.colors.gold
+                                backgroundColor: this.colors.terra,
+                                borderRadius: 4
                             }]
                         },
                         options: {
@@ -258,7 +283,6 @@
                         }
                     });
 
-                    // Gráfico de Rosca com a Paleta
                     new Chart(document.getElementById('jobsChart'), {
                         type: 'doughnut',
                         data: {
@@ -266,11 +290,11 @@
                             datasets: [{
                                 data: top5Jobs.map(c => c.total_jobs),
                                 backgroundColor: [
-                                    this.colors.dark,  // Azul Escuro
-                                    this.colors.gold,  // Dourado
-                                    this.colors.terra, // Terracota
-                                    this.colors.olive, // Oliva
-                                    '#a0a0a0'          // Cinza neutro para o 5º
+                                    this.colors.dark,
+                                    this.colors.gold,
+                                    this.colors.terra,
+                                    this.colors.olive,
+                                    '#a0a0a0'
                                 ],
                                 borderWidth: 2,
                                 borderColor: '#ffffff'

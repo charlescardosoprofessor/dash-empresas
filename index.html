@@ -21,26 +21,22 @@
             --color-olive: #535438;
         }
 
-        /* Fundo do Cabeçalho (Sólido com padrão sutil) */
+        /* Fundo do Cabeçalho */
         .header-bg {
             background-color: var(--color-dark);
             background-image: radial-gradient(var(--color-olive) 1px, transparent 1px);
             background-size: 20px 20px;
         }
 
-        /* Fundo da Área das Empresas (IMAGEM AQUI) */
+        /* Fundo da Área das Empresas */
         .companies-bg {
-            /* TROQUE O LINK ABAIXO PELA SUA IMAGEM REAL 
-               A camada rgba(64, 73, 97, 0.8) cria uma película azulada sobre a foto
-               para não brigar com as cores das logos. Se quiser a foto pura, remova o linear-gradient.
-            */
             background-image: 
                 linear-gradient(to bottom, rgba(64, 73, 97, 0.8), rgba(64, 73, 97, 0.6)),
                 url('img/background.PNG');
             
             background-size: cover;
             background-position: center;
-            background-attachment: fixed; /* Efeito parallax (a imagem fica fixa enquanto rola) */
+            background-attachment: fixed;
         }
 
         .btn-primary {
@@ -55,7 +51,7 @@
         }
 
         .logo-card {
-            background-color: rgba(255, 255, 255, 0.95); /* Leve transparência no branco */
+            background-color: rgba(255, 255, 255, 0.95);
             border: 1px solid white;
             transition: all 0.3s ease;
         }
@@ -97,27 +93,23 @@
                 <div class="flex justify-center mb-12">
                     <div class="bg-white/90 backdrop-blur-sm px-8 py-3 rounded-full shadow-lg border border-[#dbcbb1] inline-flex items-center">
                         <div class="w-2 h-2 rounded-full bg-[#804533] mr-3"></div>
-                        <span class="text-sm font-bold text-[#404961] uppercase tracking-wider">Empresas Parceiras</span>
+                        <span class="text-sm font-bold text-[#404961] uppercase tracking-wider">Empresas Parceiras ({{ companies.length }})</span>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-                    
                     <div v-for="company in companies" :key="company.name" class="logo-card rounded-xl p-6 flex flex-col items-center justify-center h-48 cursor-pointer group">
                         <div class="h-24 w-full flex items-center justify-center mb-4 relative">
                             <div v-if="!company.logoUrl" class="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold shadow-inner" 
                                  style="background-color: #f4f1ea; color: #804533;">
                                 {{ getInitials(company.name) }}
                             </div>
-                            
                             <img v-else :src="company.logoUrl" :alt="company.name" class="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105">
                         </div>
-                        
                         <h3 class="text-center text-xs font-bold text-[#404961] uppercase tracking-wide group-hover:text-[#804533] transition-colors line-clamp-2">
                             {{ company.name }}
                         </h3>
                     </div>
-
                 </div>
             </div>
         </main>
@@ -136,11 +128,17 @@
             data() {
                 return {
                     companies: [
+                        // NOVAS EMPRESAS ADICIONADAS
+                        { name: "BMC CACAU LTDA", logoUrl: "img/bmc.png" },
+                        { name: "BIOFARM AGROINDÚSTRIA", logoUrl: "img/bioword.png" },
+                        { name: "SARTORI FRUTAS", logoUrl: "" },
+                        
+                        // EMPRESAS ANTERIORES
                         { name: "Nova Porteirinha Empreendimentos", logoUrl: "" },
                         { name: "Vinhedos Vale Verde", logoUrl: "" },
                         { name: "Rede de Postos Confiança", logoUrl: "" },
                         { name: "Rizzoma", logoUrl: "img/rizzoma.png" },
-                        { name: "Serra Geral Logística", logoUrl: "" },
+                        { name: "Serra Geral Logística", logoUrl: "img/serra.png" },
                         { name: "Consórcio União da Serra Geral", logoUrl: "" },
                         { name: "BANARICA LTDA", logoUrl: "img/banarica.png" },
                         { name: "Casa do Produtor Rural", logoUrl: "img/casa-produtor.png" },
